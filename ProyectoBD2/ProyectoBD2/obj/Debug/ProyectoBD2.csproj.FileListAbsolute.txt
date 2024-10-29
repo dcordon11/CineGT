@@ -1,9 +1,0 @@
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\bin\Debug\ProyectoBD2.exe.config
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\bin\Debug\ProyectoBD2.exe
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\bin\Debug\ProyectoBD2.pdb
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.csproj.AssemblyReference.cache
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.Properties.Resources.resources
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.csproj.GenerateResource.cache
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.csproj.CoreCompileInputs.cache
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.exe
-C:\Users\dacordon\Documents\GitHub\CineGT\ProyectoBD2\ProyectoBD2\obj\Debug\ProyectoBD2.pdb
