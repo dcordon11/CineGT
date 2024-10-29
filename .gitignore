@@ -5,9 +5,6 @@
 *.userprefs
 *.sln.docstates
 
-# Archivos de índice
-*.vsidx
-
 # Binarios y archivos de salida
 [Bb]in/
 [Oo]bj/
@@ -54,3 +51,21 @@
 # Archivos de prueba de cobertura
 *.coverage
 *.coveragexml
+
+*.vsidx
+CineGT_BD2/.vs/CineGT_BD2/v17/.suo
+CineGT_BD2/.vs/CineGT_BD2/v17/DocumentLayout.json
+CineGT_BD2/CineGT_BD2/bin/Debug/CineGT_BD2.exe
+CineGT_BD2/CineGT_BD2/bin/Debug/CineGT_BD2.exe.config
+CineGT_BD2/CineGT_BD2/bin/Debug/CineGT_BD2.pdb
+CineGT_BD2/CineGT_BD2/obj/Debug/.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.csproj.AssemblyReference.cache
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.csproj.CoreCompileInputs.cache
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.csproj.FileListAbsolute.txt
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.csproj.GenerateResource.cache
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.exe
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.pdb
+CineGT_BD2/CineGT_BD2/obj/Debug/CineGT_BD2.Properties.Resources.resources
+CineGT_BD2/CineGT_BD2/obj/Debug/DesignTimeResolveAssemblyReferences.cache
+CineGT_BD2/CineGT_BD2/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
+CineGT_BD2/CineGT_BD2/Properties/Settings.settings
