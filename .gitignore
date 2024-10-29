@@ -1,0 +1,56 @@
+# Archivos de Visual Studio
+.vs/
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+
+# Archivos de índice
+*.vsidx
+
+# Binarios y archivos de salida
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.pdb
+*.idb
+*.ipch
+*.aps
+*.pch
+
+# Archivos de configuración de usuario
+*.settings
+*.log
+
+# Archivos de temporales
+*.tmp
+*.temp
+
+# Archivos de bases de datos de Visual Studio
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+
+# Otros archivos innecesarios
+*.cache
+*.ilk
+*.scc
+*.msp
+*.vssscc
+*.vspscc
+
+# Archivos de instalación
+*.msi
+*.msm
+*.msp
+
+# Archivos de NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/*
+!**/packages/repositories.config
+
+# Archivos de prueba de cobertura
+*.coverage
+*.coveragexml
