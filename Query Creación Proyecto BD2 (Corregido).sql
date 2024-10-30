@@ -5,6 +5,9 @@
 CREATE DATABASE CineGT
 GO
 
+USE CineGT
+GO
+
 DROP TABLE Usuario
 DROP TABLE Sala
 DROP TABLE Pelicula
@@ -438,4 +441,8 @@ SELECT * FROM Transaccion
 SELECT * FROM Usuario
 
 
+--Cambio de nombres que estaban al revés
+EXEC sp_rename 'Transaccion', 'TransaccionTemp';
+EXEC sp_rename 'AsientoTransaccion', 'Transaccion';
+EXEC sp_rename 'TransaccionTemp', 'AsientoTransaccion';
 
