@@ -43,8 +43,7 @@ BEGIN
 END;
 
 --MODULO PARA REGISTRAR SESIONES
-
-ALTER PROCEDURE RegistrarSesion
+CREATE PROCEDURE RegistrarSesion
     @id_pelicula INT,
     @id_sala INT,
     @fecha_hora_inicio DATETIME,
@@ -65,6 +64,20 @@ BEGIN
 
     -- Calcular la fecha y hora de fin de la sesión
     SET @fecha_hora_fin = DATEADD(MINUTE, @duracion, @fecha_hora_inicio);
+
+    -- Verificar si ya existe una sesión idéntica
+    IF EXISTS (
+        SELECT 1 
+        FROM Sesion
+        WHERE id_pelicula = @id_pelicula
+        AND id_sala = @id_sala
+        AND fecha_hora_inicio = @fecha_hora_inicio
+        AND fecha_hora_fin = @fecha_hora_fin
+    )
+    BEGIN
+        PRINT 'Error: Ya existe una sesión idéntica con los mismos detalles.';
+        RETURN;
+    END
 
     -- Verificar si la sala tiene sesiones traslapadas
     IF EXISTS (
@@ -120,10 +133,8 @@ END;
 
 
 
-
-----
 -- Crear el procedimiento para registrar sesiones desde un archivo CSV
-ALTER PROCEDURE RegistrarSesionesDesdeCSV
+CREATE PROCEDURE RegistrarSesionesDesdeCSV
     @ruta_archivo NVARCHAR(255),
     @revertir_todas BIT -- 1: Revertir todas si hay error, 0: Insertar solo válidas
 AS
@@ -183,6 +194,22 @@ BEGIN
 
         -- Calcular la fecha y hora de fin de la sesión
         SET @fecha_hora_fin = DATEADD(MINUTE, @duracion, @fecha_hora_inicio);
+
+        -- Verificar si ya existe una sesión idéntica
+        IF EXISTS (
+            SELECT 1 
+            FROM Sesion
+            WHERE id_pelicula = @id_pelicula
+            AND id_sala = @id_sala
+            AND fecha_hora_inicio = @fecha_hora_inicio
+            AND fecha_hora_fin = @fecha_hora_fin
+        )
+        BEGIN
+            PRINT 'Error: Sesión duplicada detectada. Sesión ignorada.';
+            SET @error_detectado = 1;
+            FETCH NEXT FROM sesion_cursor INTO @id_pelicula, @id_sala, @fecha_hora_inicio;
+            CONTINUE;
+        END
 
         -- Verificar traslape de sesiones
         IF EXISTS (
