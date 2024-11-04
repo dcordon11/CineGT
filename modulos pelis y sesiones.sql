@@ -46,7 +46,8 @@ END;
 CREATE PROCEDURE RegistrarSesion
     @id_pelicula INT,
     @id_sala INT,
-    @fecha_hora_inicio DATETIME
+    @fecha_hora_inicio DATETIME,
+    @id_usuario INT -- Agregar el usuario para registrar en el Log
 AS
 BEGIN
     DECLARE @duracion INT;
@@ -64,6 +65,20 @@ BEGIN
     -- Calcular la fecha y hora de fin de la sesión
     SET @fecha_hora_fin = DATEADD(MINUTE, @duracion, @fecha_hora_inicio);
 
+    -- Verificar si ya existe una sesión idéntica
+    IF EXISTS (
+        SELECT 1 
+        FROM Sesion
+        WHERE id_pelicula = @id_pelicula
+        AND id_sala = @id_sala
+        AND fecha_hora_inicio = @fecha_hora_inicio
+        AND fecha_hora_fin = @fecha_hora_fin
+    )
+    BEGIN
+        PRINT 'Error: Ya existe una sesión idéntica con los mismos detalles.';
+        RETURN;
+    END
+
     -- Verificar si la sala tiene sesiones traslapadas
     IF EXISTS (
         SELECT 1 
@@ -77,17 +92,20 @@ BEGIN
         )
     )
     BEGIN
-        PRINT 'Error: Existe un traslape con otra pelicula en la misma sala.';
+        PRINT 'Error: Existe un traslape con otra película en la misma sala.';
         RETURN;
     END
 
-    -- Verificar si hay 15 minutos entre la sesión anterior y la nueva
+    -- Verificar si hay al menos 15 minutos entre la sesión anterior y la nueva
     IF EXISTS (
         SELECT 1
         FROM Sesion
         WHERE id_sala = @id_sala
         AND estado = 'activa'
-        AND ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+        AND (
+            ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+            OR ABS(DATEDIFF(MINUTE, @fecha_hora_fin, fecha_hora_inicio)) < 15
+        )
     )
     BEGIN
         PRINT 'Error: Debe haber al menos 15 minutos entre sesiones.';
@@ -98,13 +116,23 @@ BEGIN
     INSERT INTO Sesion (id_pelicula, id_sala, fecha_hora_inicio, fecha_hora_fin, estado)
     VALUES (@id_pelicula, @id_sala, @fecha_hora_inicio, @fecha_hora_fin, 'activa');
 
+    DECLARE @id_sesion INT = SCOPE_IDENTITY();
+
+    -- Registrar en el log de sesiones
+    INSERT INTO LogSesion (id_sesion, accion, fecha, id_usuario, datos_anteriores, datos_nuevos)
+    VALUES (@id_sesion, 'Creación de sesión', GETDATE(), @id_usuario, NULL, 
+            'Película: ' + CAST(@id_pelicula AS VARCHAR) + 
+            ', Sala: ' + CAST(@id_sala AS VARCHAR) + 
+            ', Fecha y Hora Inicio: ' + CAST(@fecha_hora_inicio AS VARCHAR) + 
+            ', Fecha y Hora Fin: ' + CAST(@fecha_hora_fin AS VARCHAR) + 
+            ', Estado: activa');
+
     PRINT 'Sesión registrada exitosamente.';
 END;
 
 
 
 
-----
 -- Crear el procedimiento para registrar sesiones desde un archivo CSV
 CREATE PROCEDURE RegistrarSesionesDesdeCSV
     @ruta_archivo NVARCHAR(255),
@@ -120,16 +148,13 @@ BEGIN
 
     -- Cargar el archivo CSV en la tabla temporal
     BEGIN TRY
-        -- Cargar el archivo CSV a una tabla temporal o permanente antes de ejecutar el procedimiento
-		BULK INSERT #TempSesion
-		FROM 'C:\ruta_del_archivo\sessions.csv'
-		WITH (
-			FIELDTERMINATOR = ',',
-			ROWTERMINATOR = '\n',
-			FIRSTROW = 2
-			);
-
-
+        BULK INSERT #TempSesion
+        FROM @ruta_archivo
+        WITH (
+            FIELDTERMINATOR = ',',  -- Asumiendo que el CSV está separado por comas
+            ROWTERMINATOR = '\n',
+            FIRSTROW = 2  -- Saltar encabezados si los tiene
+        );
     END TRY
     BEGIN CATCH
         PRINT 'Error al cargar el archivo CSV.';
@@ -170,6 +195,22 @@ BEGIN
         -- Calcular la fecha y hora de fin de la sesión
         SET @fecha_hora_fin = DATEADD(MINUTE, @duracion, @fecha_hora_inicio);
 
+        -- Verificar si ya existe una sesión idéntica
+        IF EXISTS (
+            SELECT 1 
+            FROM Sesion
+            WHERE id_pelicula = @id_pelicula
+            AND id_sala = @id_sala
+            AND fecha_hora_inicio = @fecha_hora_inicio
+            AND fecha_hora_fin = @fecha_hora_fin
+        )
+        BEGIN
+            PRINT 'Error: Sesión duplicada detectada. Sesión ignorada.';
+            SET @error_detectado = 1;
+            FETCH NEXT FROM sesion_cursor INTO @id_pelicula, @id_sala, @fecha_hora_inicio;
+            CONTINUE;
+        END
+
         -- Verificar traslape de sesiones
         IF EXISTS (
             SELECT 1 
@@ -195,7 +236,10 @@ BEGIN
             FROM Sesion
             WHERE id_sala = @id_sala
             AND estado = 'activa'
-            AND ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+            AND (
+                ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+                OR ABS(DATEDIFF(MINUTE, @fecha_hora_fin, fecha_hora_inicio)) < 15
+            )
         )
         BEGIN
             PRINT 'Error: No hay suficiente tiempo entre sesiones. Sesión ignorada.';
@@ -233,4 +277,3 @@ BEGIN
     -- Eliminar la tabla temporal
     DROP TABLE #TempSesion;
 END;
-
