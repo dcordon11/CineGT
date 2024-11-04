@@ -7,7 +7,7 @@ GO
 
 USE CineGT
 GO
-
+/*
 DROP TABLE Usuario
 DROP TABLE Sala
 DROP TABLE Pelicula
@@ -27,7 +27,7 @@ DELETE FROM  Transaccion
 DELETE FROM  AsientoTransaccion
 DELETE FROM  LogTransaccion
 DELETE FROM  LogSesion
-
+*/
 -- Tabla de Usuarios con roles admin y vendedor
 CREATE TABLE Usuario (
     id_usuario INT PRIMARY KEY IDENTITY(1,1),
@@ -93,48 +93,62 @@ CREATE TABLE Transaccion (
 );
 
 
-
-
 -- Creación de la tabla AsientoTransaccion referenciando correctamente Asiento (incluyendo id_sala)
 CREATE TABLE AsientoTransaccion (
-    fila CHAR(1) NOT NULL,            -- Fila del asiento
-    numero INT NOT NULL,              -- Número del asiento en la fila
     id_transaccion INT NOT NULL,      -- Relación con la transacción
     id_sesion INT NOT NULL,           -- Relación con la sesión
     id_sala INT NOT NULL,             -- Relación con la sala
-    PRIMARY KEY (fila, numero, id_transaccion, id_sala, id_sesion), -- Llave primaria compuesta
+    fila CHAR(1) NOT NULL,            -- Fila del asiento
+    numero INT NOT NULL,              -- Número del asiento en la fila
+    PRIMARY KEY (id_transaccion, id_sesion, id_sala, fila, numero), -- Llave primaria compuesta
     FOREIGN KEY (id_sala, fila, numero) REFERENCES Asiento(id_sala, fila, numero), -- Llave foránea hacia Asiento
     FOREIGN KEY (id_transaccion) REFERENCES Transaccion(id_transaccion), -- Llave foránea hacia Transaccion
     FOREIGN KEY (id_sesion) REFERENCES Sesion(id_sesion),           -- Llave foránea hacia Sesion
     FOREIGN KEY (id_sala) REFERENCES Sala(id_sala)                  -- Llave foránea hacia Sala
 );
 
-
--- Tabla de Log de transacciones
+-- Creación de la tabla LogTransaccion con los detalles de transacción, sesión y película
 CREATE TABLE LogTransaccion (
     id_log INT PRIMARY KEY IDENTITY(1,1),
-    id_transaccion INT,
-    accion VARCHAR(50) NOT NULL,
-    fecha DATETIME NOT NULL DEFAULT GETDATE(),
-    id_usuario INT NOT NULL,
-    datos_anteriores TEXT,
-    datos_nuevos TEXT,
+    id_transaccion INT,                       -- Identificador de la transacción
+    accion VARCHAR(50) NOT NULL,              -- Tipo de acción realizada
+    fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha y hora del log
+    id_usuario INT NOT NULL,                  -- Usuario que realizó la acción
+    datos_anteriores TEXT,                    -- Datos antes de la acción
+    datos_nuevos TEXT,                        -- Datos después de la acción
+    id_sesion INT,                            -- Identificador de la sesión en la transacción
+    fecha_hora DATETIME,                      -- Fecha y hora de la transacción
+    tipo_asignacion VARCHAR(10),              -- Tipo de asignación (automática o manual)
+    id_pelicula INT,                          -- Identificador de la película
+    nombre_pelicula VARCHAR(100),             -- Nombre de la película
+    clasificacion_pelicula VARCHAR(10),       -- Clasificación de la película
+    duracion_pelicula INT,                    -- Duración de la película en minutos
     FOREIGN KEY (id_transaccion) REFERENCES Transaccion(id_transaccion),
-    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario),
+    FOREIGN KEY (id_sesion) REFERENCES Sesion(id_sesion)
 );
 
--- Tabla de Log de sesiones
+
+-- Creación de la tabla LogSesion con los detalles de sesión y película
 CREATE TABLE LogSesion (
     id_log INT PRIMARY KEY IDENTITY(1,1),
-    id_sesion INT NOT NULL,
-    accion VARCHAR(50) NOT NULL,
-    fecha DATETIME NOT NULL DEFAULT GETDATE(),
-    id_usuario INT NOT NULL,
-    datos_anteriores TEXT,
-    datos_nuevos TEXT,
+    id_sesion INT NOT NULL,                   -- Identificador de la sesión
+    accion VARCHAR(50) NOT NULL,              -- Tipo de acción realizada en la sesión
+    fecha DATETIME NOT NULL DEFAULT GETDATE(), -- Fecha y hora del log
+    id_usuario INT NOT NULL,                  -- Usuario que realizó la acción
+    datos_anteriores TEXT,                    -- Datos antes de la acción
+    datos_nuevos TEXT,                        -- Datos después de la acción
+    id_pelicula INT,                          -- Identificador de la película en la sesión
+    nombre_pelicula VARCHAR(100),             -- Nombre de la película
+    clasificacion_pelicula VARCHAR(10),       -- Clasificación de la película
+    duracion_pelicula INT,                    -- Duración de la película en minutos
+    fecha_hora_inicio DATETIME,               -- Fecha y hora de inicio de la sesión
+    fecha_hora_fin DATETIME,                  -- Fecha y hora de fin de la sesión
+    estado VARCHAR(10),                       -- Estado de la sesión (activa o inactiva)
     FOREIGN KEY (id_sesion) REFERENCES Sesion(id_sesion),
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
 );
+
 
 
 --INSERTS
@@ -329,90 +343,85 @@ INSERT INTO Transaccion (id_usuario, id_sesion, fecha_hora, total_asientos, tipo
 -- iNSERTS para la tabla AsientoTransaccion
 
 --Los inserts en este caso son para ejemplo del funcionamiento de la tabla, están asignados según las 5 salas
-
 -- Transacciones para Sesión 1 (Sala 1)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 1, 1, 1), ('A', 2, 1, 1, 1), -- 2 asientos para transacción T001 en Sesión 1, Sala 1
-('A', 3, 2, 1, 1), ('A', 4, 2, 1, 1), ('A', 5, 2, 1, 1), -- 3 asientos para transacción T002 en Sesión 1, Sala 1
-('A', 6, 3, 1, 1), -- 1 asiento para transacción T003 en Sesión 1, Sala 1
-('A', 7, 4, 1, 1), ('A', 8, 4, 1, 1), ('A', 9, 4, 1, 1), ('A', 10, 4, 1, 1), -- 4 asientos para transacción T004 en Sesión 1, Sala 1
-('B', 1, 5, 1, 1), ('B', 2, 5, 1, 1); -- 2 asientos para transacción T005 en Sesión 1, Sala 1
-
+('A', 1, 1, 1, 1), ('A', 2, 1, 1, 1),
+('A', 3, 2, 1, 1), ('A', 4, 2, 1, 1), ('A', 5, 2, 1, 1),
+('A', 6, 3, 1, 1),
+('A', 7, 4, 1, 1), ('A', 8, 4, 1, 1), ('A', 9, 4, 1, 1), ('A', 10, 4, 1, 1),
+('B', 1, 5, 1, 1), ('B', 2, 5, 1, 1);
 
 -- Transacciones para Sesión 2 (Sala 2)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 6, 2, 2), ('A', 2, 6, 2, 2), -- 2 asientos para transacción T006 en Sesión 2, Sala 2
-('A', 3, 7, 2, 2), ('A', 4, 7, 2, 2), ('A', 5, 7, 2, 2), -- 3 asientos para transacción T007 en Sesión 2, Sala 2
-('A', 6, 8, 2, 2), -- 1 asiento para transacción T008 en Sesión 2, Sala 2
-('A', 7, 9, 2, 2), ('A', 8, 9, 2, 2), ('A', 9, 9, 2, 2), ('A', 10, 9, 2, 2), -- 4 asientos para transacción T009 en Sesión 2, Sala 2
-('B', 1, 10, 2, 2), ('B', 2, 10, 2, 2); -- 2 asientos para transacción T010 en Sesión 2, Sala 2
+('A', 1, 6, 2, 2), ('A', 2, 6, 2, 2),
+('A', 3, 7, 2, 2), ('A', 4, 7, 2, 2), ('A', 5, 7, 2, 2),
+('A', 6, 8, 2, 2),
+('A', 7, 9, 2, 2), ('A', 8, 9, 2, 2), ('A', 9, 9, 2, 2), ('A', 10, 9, 2, 2),
+('B', 1, 10, 2, 2), ('B', 2, 10, 2, 2);
 
 -- Transacciones para Sesión 3 (Sala 3)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 11, 3, 3), ('A', 2, 11, 3, 3), -- 2 asientos para transacción T011 en Sesión 3, Sala 3
-('A', 3, 12, 3, 3), ('A', 4, 12, 3, 3), ('A', 5, 12, 3, 3), -- 3 asientos para transacción T012 en Sesión 3, Sala 3
-('A', 6, 13, 3, 3), -- 1 asiento para transacción T013 en Sesión 3, Sala 3
-('A', 7, 14, 3, 3), ('A', 8, 14, 3, 3), ('A', 9, 14, 3, 3), ('A', 10, 14, 3, 3), -- 4 asientos para transacción T014 en Sesión 3, Sala 3
-('B', 1, 15, 3, 3), ('B', 2, 15, 3, 3); -- 2 asientos para transacción T015 en Sesión 3, Sala 3
-
+('A', 1, 11, 3, 3), ('A', 2, 11, 3, 3),
+('A', 3, 12, 3, 3), ('A', 4, 12, 3, 3), ('A', 5, 12, 3, 3),
+('A', 6, 13, 3, 3),
+('A', 7, 14, 3, 3), ('A', 8, 14, 3, 3), ('A', 9, 14, 3, 3), ('A', 10, 14, 3, 3),
+('B', 1, 15, 3, 3), ('B', 2, 15, 3, 3);
 
 -- Transacciones para Sesión 4 (Sala 4)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 16, 4, 4), ('A', 2, 16, 4, 4), -- 2 asientos para transacción T016 en Sesión 4, Sala 4
-('A', 3, 17, 4, 4), ('A', 4, 17, 4, 4), ('A', 5, 17, 4, 4), -- 3 asientos para transacción T017 en Sesión 4, Sala 4
-('A', 6, 18, 4, 4), -- 1 asiento para transacción T018 en Sesión 4, Sala 4
-('A', 7, 19, 4, 4), ('A', 8, 19, 4, 4), ('A', 9, 19, 4, 4), ('A', 10, 19, 4, 4), -- 4 asientos para transacción T019 en Sesión 4, Sala 4
-('B', 1, 20, 4, 4), ('B', 2, 20, 4, 4); -- 2 asientos para transacción T020 en Sesión 4, Sala 4
-
+('A', 1, 16, 4, 4), ('A', 2, 16, 4, 4),
+('A', 3, 17, 4, 4), ('A', 4, 17, 4, 4), ('A', 5, 17, 4, 4),
+('A', 6, 18, 4, 4),
+('A', 7, 19, 4, 4), ('A', 8, 19, 4, 4), ('A', 9, 19, 4, 4), ('A', 10, 19, 4, 4),
+('B', 1, 20, 4, 4), ('B', 2, 20, 4, 4);
 
 -- Transacciones para Sesión 5 (Sala 5)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 21, 5, 5), ('A', 2, 21, 5, 5), -- 2 asientos para transacción T021 en Sesión 5, Sala 5
-('A', 3, 22, 5, 5), ('A', 4, 22, 5, 5), ('A', 5, 22, 5, 5), -- 3 asientos para transacción T022 en Sesión 5, Sala 5
-('A', 6, 23, 5, 5), -- 1 asiento para transacción T023 en Sesión 5, Sala 5
-('A', 7, 24, 5, 5), ('A', 8, 24, 5, 5), ('A', 9, 24, 5, 5), ('A', 10, 24, 5, 5), -- 4 asientos para transacción T024 en Sesión 5, Sala 5
-('B', 1, 25, 5, 5), ('B', 2, 25, 5, 5); -- 2 asientos para transacción T025 en Sesión 5, Sala 5
-
+('A', 1, 21, 5, 5), ('A', 2, 21, 5, 5),
+('A', 3, 22, 5, 5), ('A', 4, 22, 5, 5), ('A', 5, 22, 5, 5),
+('A', 6, 23, 5, 5),
+('A', 7, 24, 5, 5), ('A', 8, 24, 5, 5), ('A', 9, 24, 5, 5), ('A', 10, 24, 5, 5),
+('B', 1, 25, 5, 5), ('B', 2, 25, 5, 5);
 
 -- Transacciones para Sesión 6 (Sala 2)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 26, 6, 2), ('A', 2, 26, 6, 2), -- 2 asientos para transacción T026 en Sesión 6, Sala 2
-('A', 3, 27, 6, 2), ('A', 4, 27, 6, 2), ('A', 5, 27, 6, 2), -- 3 asientos para transacción T027 en Sesión 6, Sala 2
-('A', 6, 28, 6, 2), -- 1 asiento para transacción T028 en Sesión 6, Sala 2
-('A', 7, 29, 6, 2), ('A', 8, 29, 6, 2), ('A', 9, 29, 6, 2), ('A', 10, 29, 6, 2), -- 4 asientos para transacción T029 en Sesión 6, Sala 2
-('B', 1, 30, 6, 2), ('B', 2, 30, 6, 2); -- 2 asientos para transacción T030 en Sesión 6, Sala 2
+('A', 1, 26, 6, 2), ('A', 2, 26, 6, 2),
+('A', 3, 27, 6, 2), ('A', 4, 27, 6, 2), ('A', 5, 27, 6, 2),
+('A', 6, 28, 6, 2),
+('A', 7, 29, 6, 2), ('A', 8, 29, 6, 2), ('A', 9, 29, 6, 2), ('A', 10, 29, 6, 2),
+('B', 1, 30, 6, 2), ('B', 2, 30, 6, 2);
 
 -- Transacciones para Sesión 7 (Sala 3)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 31, 7, 3), ('A', 2, 31, 7, 3), -- 2 asientos para transacción T031 en Sesión 7, Sala 3
-('A', 3, 32, 7, 3), ('A', 4, 32, 7, 3), ('A', 5, 32, 7, 3), -- 3 asientos para transacción T032 en Sesión 7, Sala 3
-('A', 6, 33, 7, 3), -- 1 asiento para transacción T033 en Sesión 7, Sala 3
-('A', 7, 34, 7, 3), ('A', 8, 34, 7, 3), ('A', 9, 34, 7, 3), ('A', 10, 34, 7, 3), -- 4 asientos para transacción T034 en Sesión 7, Sala 3
-('B', 1, 35, 7, 3), ('B', 2, 35, 7, 3); -- 2 asientos para transacción T035 en Sesión 7, Sala 3
+('A', 1, 31, 7, 3), ('A', 2, 31, 7, 3),
+('A', 3, 32, 7, 3), ('A', 4, 32, 7, 3), ('A', 5, 32, 7, 3),
+('A', 6, 33, 7, 3),
+('A', 7, 34, 7, 3), ('A', 8, 34, 7, 3), ('A', 9, 34, 7, 3), ('A', 10, 34, 7, 3),
+('B', 1, 35, 7, 3), ('B', 2, 35, 7, 3);
 
 -- Transacciones para Sesión 8 (Sala 4)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 36, 8, 4), ('A', 2, 36, 8, 4), -- 2 asientos para transacción T036 en Sesión 8, Sala 4
-('A', 3, 37, 8, 4), ('A', 4, 37, 8, 4), ('A', 5, 37, 8, 4), -- 3 asientos para transacción T037 en Sesión 8, Sala 4
-('A', 6, 38, 8, 4), -- 1 asiento para transacción T038 en Sesión 8, Sala 4
-('A', 7, 39, 8, 4), ('A', 8, 39, 8, 4), ('A', 9, 39, 8, 4), ('A', 10, 39, 8, 4), -- 4 asientos para transacción T039 en Sesión 8, Sala 4
-('B', 1, 40, 8, 4), ('B', 2, 40, 8, 4); -- 2 asientos para transacción T040 en Sesión 8, Sala 4
+('A', 1, 36, 8, 4), ('A', 2, 36, 8, 4),
+('A', 3, 37, 8, 4), ('A', 4, 37, 8, 4), ('A', 5, 37, 8, 4),
+('A', 6, 38, 8, 4),
+('A', 7, 39, 8, 4), ('A', 8, 39, 8, 4), ('A', 9, 39, 8, 4), ('A', 10, 39, 8, 4),
+('B', 1, 40, 8, 4), ('B', 2, 40, 8, 4);
 
 -- Transacciones para Sesión 9 (Sala 5)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 41, 9, 5), ('A', 2, 41, 9, 5), -- 2 asientos para transacción T041 en Sesión 9, Sala 5
-('A', 3, 42, 9, 5), ('A', 4, 42, 9, 5), ('A', 5, 42, 9, 5), -- 3 asientos para transacción T042 en Sesión 9, Sala 5
-('A', 6, 43, 9, 5), -- 1 asiento para transacción T043 en Sesión 9, Sala 5
-('A', 7, 44, 9, 5), ('A', 8, 44, 9, 5), ('A', 9, 44, 9, 5), ('A', 10, 44, 9, 5), -- 4 asientos para transacción T044 en Sesión 9, Sala 5
-('B', 1, 45, 9, 5), ('B', 2, 45, 9, 5); -- 2 asientos para transacción T045 en Sesión 9, Sala 5
+('A', 1, 41, 9, 5), ('A', 2, 41, 9, 5),
+('A', 3, 42, 9, 5), ('A', 4, 42, 9, 5), ('A', 5, 42, 9, 5),
+('A', 6, 43, 9, 5),
+('A', 7, 44, 9, 5), ('A', 8, 44, 9, 5), ('A', 9, 44, 9, 5), ('A', 10, 44, 9, 5),
+('B', 1, 45, 9, 5), ('B', 2, 45, 9, 5);
 
 -- Transacciones para Sesión 10 (Sala 1)
 INSERT INTO AsientoTransaccion (fila, numero, id_transaccion, id_sesion, id_sala) VALUES
-('A', 1, 46, 10, 1), ('A', 2, 46, 10, 1), -- 2 asientos para transacción T046 en Sesión 10, Sala 1
-('A', 3, 47, 10, 1), ('A', 4, 47, 10, 1), ('A', 5, 47, 10, 1), -- 3 asientos para transacción T047 en Sesión 10, Sala 1
-('A', 6, 48, 10, 1), -- 1 asiento para transacción T048 en Sesión 10, Sala 1
-('A', 7, 49, 10, 1), ('A', 8, 49, 10, 1), ('A', 9, 49, 10, 1), ('A', 10, 49, 10, 1), -- 4 asientos para transacción T049 en Sesión 10, Sala 1
-('B', 1, 50, 10, 1), ('B', 2, 50, 10, 1); -- 2 asientos para transacción T050 en Sesión 10, Sala 1
+('A', 1, 46, 10, 1), ('A', 2, 46, 10, 1),
+('A', 3, 47, 10, 1), ('A', 4, 47, 10, 1), ('A', 5, 47, 10, 1),
+('A', 6, 48, 10, 1),
+('A', 7, 49, 10, 1), ('A', 8, 49, 10, 1), ('A', 9, 49, 10, 1), ('A', 10, 49, 10, 1),
+('B', 1, 50, 10, 1), ('B', 2, 50, 10, 1);
 
 
 --Backup de la Base de Datos

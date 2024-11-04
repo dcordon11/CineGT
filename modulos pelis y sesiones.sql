@@ -120,13 +120,16 @@ BEGIN
 
     -- Cargar el archivo CSV en la tabla temporal
     BEGIN TRY
-        BULK INSERT #TempSesion
-        FROM @ruta_archivo
-        WITH (
-            FIELDTERMINATOR = ',',  -- Asumiendo que el CSV está separado por comas
-            ROWTERMINATOR = '\n',
-            FIRSTROW = 2  -- Saltar encabezados si los tiene
-        );
+        -- Cargar el archivo CSV a una tabla temporal o permanente antes de ejecutar el procedimiento
+		BULK INSERT #TempSesion
+		FROM 'C:\ruta_del_archivo\sessions.csv'
+		WITH (
+			FIELDTERMINATOR = ',',
+			ROWTERMINATOR = '\n',
+			FIRSTROW = 2
+			);
+
+
     END TRY
     BEGIN CATCH
         PRINT 'Error al cargar el archivo CSV.';
