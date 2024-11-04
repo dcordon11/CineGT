@@ -43,10 +43,12 @@ BEGIN
 END;
 
 --MODULO PARA REGISTRAR SESIONES
-CREATE PROCEDURE RegistrarSesion
+
+ALTER PROCEDURE RegistrarSesion
     @id_pelicula INT,
     @id_sala INT,
-    @fecha_hora_inicio DATETIME
+    @fecha_hora_inicio DATETIME,
+    @id_usuario INT -- Agregar el usuario para registrar en el Log
 AS
 BEGIN
     DECLARE @duracion INT;
@@ -77,17 +79,20 @@ BEGIN
         )
     )
     BEGIN
-        PRINT 'Error: Existe un traslape con otra pelicula en la misma sala.';
+        PRINT 'Error: Existe un traslape con otra película en la misma sala.';
         RETURN;
     END
 
-    -- Verificar si hay 15 minutos entre la sesión anterior y la nueva
+    -- Verificar si hay al menos 15 minutos entre la sesión anterior y la nueva
     IF EXISTS (
         SELECT 1
         FROM Sesion
         WHERE id_sala = @id_sala
         AND estado = 'activa'
-        AND ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+        AND (
+            ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+            OR ABS(DATEDIFF(MINUTE, @fecha_hora_fin, fecha_hora_inicio)) < 15
+        )
     )
     BEGIN
         PRINT 'Error: Debe haber al menos 15 minutos entre sesiones.';
@@ -98,15 +103,27 @@ BEGIN
     INSERT INTO Sesion (id_pelicula, id_sala, fecha_hora_inicio, fecha_hora_fin, estado)
     VALUES (@id_pelicula, @id_sala, @fecha_hora_inicio, @fecha_hora_fin, 'activa');
 
+    DECLARE @id_sesion INT = SCOPE_IDENTITY();
+
+    -- Registrar en el log de sesiones
+    INSERT INTO LogSesion (id_sesion, accion, fecha, id_usuario, datos_anteriores, datos_nuevos)
+    VALUES (@id_sesion, 'Creación de sesión', GETDATE(), @id_usuario, NULL, 
+            'Película: ' + CAST(@id_pelicula AS VARCHAR) + 
+            ', Sala: ' + CAST(@id_sala AS VARCHAR) + 
+            ', Fecha y Hora Inicio: ' + CAST(@fecha_hora_inicio AS VARCHAR) + 
+            ', Fecha y Hora Fin: ' + CAST(@fecha_hora_fin AS VARCHAR) + 
+            ', Estado: activa');
+
     PRINT 'Sesión registrada exitosamente.';
 END;
 
 
 
 
+
 ----
 -- Crear el procedimiento para registrar sesiones desde un archivo CSV
-CREATE PROCEDURE RegistrarSesionesDesdeCSV
+ALTER PROCEDURE RegistrarSesionesDesdeCSV
     @ruta_archivo NVARCHAR(255),
     @revertir_todas BIT -- 1: Revertir todas si hay error, 0: Insertar solo válidas
 AS
@@ -192,7 +209,10 @@ BEGIN
             FROM Sesion
             WHERE id_sala = @id_sala
             AND estado = 'activa'
-            AND ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+            AND (
+                ABS(DATEDIFF(MINUTE, fecha_hora_fin, @fecha_hora_inicio)) < 15
+                OR ABS(DATEDIFF(MINUTE, @fecha_hora_fin, fecha_hora_inicio)) < 15
+            )
         )
         BEGIN
             PRINT 'Error: No hay suficiente tiempo entre sesiones. Sesión ignorada.';
@@ -230,4 +250,3 @@ BEGIN
     -- Eliminar la tabla temporal
     DROP TABLE #TempSesion;
 END;
-
