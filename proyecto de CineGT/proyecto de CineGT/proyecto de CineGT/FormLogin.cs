@@ -20,7 +20,7 @@ namespace proyecto_de_CineGT
         {
             InitializeComponent();
             // txtPassword
-            this.txtPassword.Location = new System.Drawing.Point(279, 121);
+            this.txtPassword.Location = new System.Drawing.Point(318, 239);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(100, 22);
             this.txtPassword.TabIndex = 3;
@@ -69,6 +69,11 @@ namespace proyecto_de_CineGT
                     MessageBox.Show("Error al conectarse a la base de datos: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void txtPassword_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
