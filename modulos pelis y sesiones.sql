@@ -134,7 +134,7 @@ END;
 
 
 -- Crear el procedimiento para registrar sesiones desde un archivo CSV
-CREATE PROCEDURE RegistrarSesionesDesdeCSV
+ALTER PROCEDURE RegistrarSesionesDesdeCSV
     @ruta_archivo NVARCHAR(255),
     @revertir_todas BIT -- 1: Revertir todas si hay error, 0: Insertar solo válidas
 AS
@@ -146,15 +146,19 @@ BEGIN
         fecha_hora_inicio DATETIME
     );
 
-    -- Cargar el archivo CSV en la tabla temporal
-    BEGIN TRY
+    -- Comando BULK INSERT dinámico
+    DECLARE @sql NVARCHAR(MAX);
+    SET @sql = N'
         BULK INSERT #TempSesion
-        FROM @ruta_archivo
+        FROM ''' + @ruta_archivo + '''
         WITH (
-            FIELDTERMINATOR = ',',  -- Asumiendo que el CSV está separado por comas
-            ROWTERMINATOR = '\n',
+            FIELDTERMINATOR = '','',  -- Asumiendo que el CSV está separado por comas
+            ROWTERMINATOR = ''\n'',
             FIRSTROW = 2  -- Saltar encabezados si los tiene
-        );
+        );';
+
+    BEGIN TRY
+        EXEC sp_executesql @sql;
     END TRY
     BEGIN CATCH
         PRINT 'Error al cargar el archivo CSV.';
@@ -167,6 +171,7 @@ BEGIN
     DECLARE @duracion INT;
     DECLARE @fecha_hora_fin DATETIME;
     DECLARE @error_detectado BIT = 0;
+    DECLARE @insertados INT = 0; -- Contador de sesiones insertadas
 
     -- Cursor para iterar por cada sesión en la tabla temporal
     DECLARE sesion_cursor CURSOR FOR
@@ -181,6 +186,10 @@ BEGIN
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
+        PRINT 'Procesando sesión para película ID ' + CAST(@id_pelicula AS NVARCHAR) 
+            + ', sala ID ' + CAST(@id_sala AS NVARCHAR) 
+            + ', inicio: ' + CAST(@fecha_hora_inicio AS NVARCHAR);
+
         -- Validar datos de la sesión
         SELECT @duracion = duracion FROM Pelicula WHERE id_pelicula = @id_pelicula;
 
@@ -252,6 +261,7 @@ BEGIN
         INSERT INTO Sesion (id_pelicula, id_sala, fecha_hora_inicio, fecha_hora_fin, estado)
         VALUES (@id_pelicula, @id_sala, @fecha_hora_inicio, @fecha_hora_fin, 'activa');
 
+        SET @insertados = @insertados + 1; -- Incrementar contador de inserciones
         PRINT 'Sesión registrada exitosamente.';
 
         -- Avanzar al siguiente registro
@@ -271,9 +281,24 @@ BEGIN
     ELSE
     BEGIN
         COMMIT TRANSACTION;
-        PRINT 'Sesiones procesadas exitosamente.';
+        IF @insertados > 0
+        BEGIN
+            PRINT 'Sesiones procesadas exitosamente.';
+        END
+        ELSE
+        BEGIN
+            PRINT 'No se insertaron sesiones debido a errores en el archivo.';
+        END
     END
 
     -- Eliminar la tabla temporal
     DROP TABLE #TempSesion;
 END;
+
+
+EXEC RegistrarSesionesDesdeCSV 
+    @ruta_archivo = 'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\prueba2.csv', 
+    @revertir_todas = 0; -- 1: Revertir todas si hay error, 0: Insertar solo válidas
+
+	select * from Sesion
+	select * from Pelicula
