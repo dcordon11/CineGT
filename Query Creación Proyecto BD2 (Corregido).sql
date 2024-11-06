@@ -7,7 +7,7 @@ GO
 
 USE CineGT
 GO
-/*
+/* 
 DROP TABLE Usuario
 DROP TABLE Sala
 DROP TABLE Pelicula
@@ -150,6 +150,21 @@ CREATE TABLE LogSesion (
     FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
 );
 
+
+
+-- Modificar la tabla LogTransaccion
+ALTER TABLE LogTransaccion
+ALTER COLUMN datos_anteriores VARCHAR(MAX);
+
+ALTER TABLE LogTransaccion
+ALTER COLUMN datos_nuevos VARCHAR(MAX);
+
+-- Modificar la tabla LogSesion
+ALTER TABLE LogSesion
+ALTER COLUMN datos_anteriores VARCHAR(MAX);
+
+ALTER TABLE LogSesion
+ALTER COLUMN datos_nuevos VARCHAR(MAX);
 
 
 --INSERTS
@@ -468,3 +483,18 @@ ORDER BY id_transaccion ASC
 EXEC sp_rename 'Transaccion', 'TransaccionTemp';
 EXEC sp_rename 'AsientoTransaccion', 'Transaccion';
 EXEC sp_rename 'TransaccionTemp', 'AsientoTransaccion';
+
+
+SELECT * 
+FROM AsientoTransaccion 
+ORDER BY id_transaccion DESC; -- Ordenar por id_transaccion para ver los registros más recientes
+
+SELECT * 
+FROM Transaccion 
+ORDER BY id_transaccion DESC; -- Ordenar por id_transaccion para ver los registros más recientes
+
+SELECT at.id_asiento, at.fila, at.numero, a.fila AS fila_asiento, a.numero AS numero_asiento
+FROM AsientoTransaccion at
+JOIN Asiento a ON at.id_asiento = a.id_asiento
+WHERE at.fila <> a.fila OR at.numero <> a.numero;
+
